@@ -14,6 +14,15 @@ class GameScene: SKScene {
     var entities = [GKEntity]()
     var graphs = [String : GKGraph]()
     
+    // Entety values
+    let playerSpeed: CGFloat = 150.0
+    let knightSpeed: CGFloat = 75.0
+    
+    var player: SKSpriteNode?
+    var knights: [SKSpriteNode] = []
+    
+    var lastTouch: CGPoint? = nil
+    
     private var lastUpdateTime : TimeInterval = 0
     
     override func didMove(to view: SKView) {
@@ -21,19 +30,40 @@ class GameScene: SKScene {
         self.lastUpdateTime = 0
         physicsWorld.contactDelegate = self
         
+        //Set up the player
+        player = childNode(withName: "werewolf") as? SKSpriteNode
+        player?.texture?.filteringMode = SKTextureFilteringMode.nearest
+        player?.setScale(5.0)
+        
+        
+        //Setup the knights
+        for child in self.children {
+            if child.name == "knight" {
+                if let child = child as? SKSpriteNode {
+                    child.texture?.filteringMode = SKTextureFilteringMode.nearest
+                    child.setScale(5.0)
+                    knights.append(child)
+                }
+            }
+        }
+        
        
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-       
+       handleTouches(touches)
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        
+//        handleTouches(touches)
     }
     
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        
+//        handleTouches(touches)
+    }
+    
+    fileprivate func handleTouches(_ touches: Set<UITouch>) {
+        lastTouch = touches.first?.location(in: self)
     }
     
     
@@ -46,14 +76,65 @@ class GameScene: SKScene {
         }
         
         // Calculate time since last update
-        let dt = currentTime - self.lastUpdateTime
+        let _ = currentTime - self.lastUpdateTime
         
-        // Update entities
-        for entity in self.entities {
-            entity.update(deltaTime: dt)
-        }
+        updatePlayer();
+        updateEnemies();
+        
         
         self.lastUpdateTime = currentTime
+    }
+    
+    func updatePlayer() {
+        guard let player = player,
+              let touch = lastTouch else {
+                return
+        }
+        
+        let position = player.position
+        
+        if (shouldPlayerMove(currentPosition: position, touchPosition: touch)) {
+            updatePosition(for: player, to: touch, speed: playerSpeed)
+        }
+        
+    }
+    
+    
+    func updateEnemies() {
+        for knight in knights {
+            let targetPosition = player?.position
+            
+            
+            updatePosition(for: knight, to: targetPosition!, speed: knightSpeed)
+        }
+    }
+    
+    fileprivate func updatePosition(for sprite: SKSpriteNode,
+                                    to target: CGPoint,
+                                    speed: CGFloat) {
+        let currentPosition = sprite.position
+        let angle = CGFloat.pi + atan2(currentPosition.y - target.y, currentPosition.x - target.x)
+        
+        
+        if (target.x < currentPosition.x) {
+            let flip = SKAction.scaleX(to: -5, duration: 0)
+            sprite.run(flip)
+        } else if (target.x >= currentPosition.x) {
+            let flip = SKAction.scaleX(to: 5, duration: 0)
+            sprite.run(flip)
+        }
+        
+        let velocityX = speed * cos(angle)
+        let velocityY = speed * sin(angle)
+        
+        let newVelocity = CGVector(dx: velocityX, dy: velocityY)
+        sprite.physicsBody?.velocity = newVelocity
+    }
+    
+    fileprivate func shouldPlayerMove(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
+        guard let player = player else { return false }
+        return abs(currentPosition.x - touchPosition.x) > player.frame.width / 2 ||
+            abs(currentPosition.y - touchPosition.y) > player.frame.height / 2
     }
     
     // Custom collision handler
