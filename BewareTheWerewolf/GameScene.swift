@@ -14,9 +14,12 @@ class GameScene: SKScene {
     var entities = [GKEntity]()
     var graphs = [String : GKGraph]()
     
-    // Entety values
-    let playerSpeed: CGFloat = 150.0
-    let knightSpeed: CGFloat = 75.0
+    // Playground
+    var playground: SKSpriteNode?
+    
+    // Entity values
+    let playerSpeed: CGFloat = 25.0
+    let knightSpeed: CGFloat = 15.0
     
     var player: SKSpriteNode?
     var knights: [SKSpriteNode] = []
@@ -30,18 +33,22 @@ class GameScene: SKScene {
         self.lastUpdateTime = 0
         physicsWorld.contactDelegate = self
         
+        //Setup the playground
+        playground = childNode(withName: "playground") as? SKSpriteNode
+        playground?.texture?.filteringMode = SKTextureFilteringMode.nearest
+//        playground?.setScale(6.0)
+        
         //Set up the player
         player = childNode(withName: "werewolf") as? SKSpriteNode
         player?.texture?.filteringMode = SKTextureFilteringMode.nearest
-        player?.setScale(5.0)
-        
+//        player?.setScale(5.0)
         
         //Setup the knights
         for child in self.children {
             if child.name == "knight" {
                 if let child = child as? SKSpriteNode {
                     child.texture?.filteringMode = SKTextureFilteringMode.nearest
-                    child.setScale(5.0)
+//                    child.setScale(5.0)
                     knights.append(child)
                 }
             }
@@ -117,10 +124,10 @@ class GameScene: SKScene {
         
         
         if (target.x < currentPosition.x) {
-            let flip = SKAction.scaleX(to: -5, duration: 0)
+            let flip = SKAction.scaleX(to: -1, duration: 0)
             sprite.run(flip)
         } else if (target.x >= currentPosition.x) {
-            let flip = SKAction.scaleX(to: 5, duration: 0)
+            let flip = SKAction.scaleX(to: 1, duration: 0)
             sprite.run(flip)
         }
         

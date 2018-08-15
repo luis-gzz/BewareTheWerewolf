@@ -8,7 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		B4075BA52123D24400D98E58 /* wolf.atlas in Resources */ = {isa = PBXBuildFile; fileRef = B4075BA42123D24400D98E58 /* wolf.atlas */; };
-		B4075BA72123DAD200D98E58 /* knight.png in Resources */ = {isa = PBXBuildFile; fileRef = B4075BA62123DAD100D98E58 /* knight.png */; };
+		B4075BB22123FA2C00D98E58 /* playground.png in Resources */ = {isa = PBXBuildFile; fileRef = B4075BB02123FA2C00D98E58 /* playground.png */; };
+		B4075BB32123FA2C00D98E58 /* knight.png in Resources */ = {isa = PBXBuildFile; fileRef = B4075BB12123FA2C00D98E58 /* knight.png */; };
 		B4C8D8C721082B6C008962B3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C8D8C621082B6C008962B3 /* AppDelegate.swift */; };
 		B4C8D8C921082B6C008962B3 /* GameScene.sks in Resources */ = {isa = PBXBuildFile; fileRef = B4C8D8C821082B6C008962B3 /* GameScene.sks */; };
 		B4C8D8CB21082B6C008962B3 /* Actions.sks in Resources */ = {isa = PBXBuildFile; fileRef = B4C8D8CA21082B6C008962B3 /* Actions.sks */; };
@@ -21,7 +22,8 @@
 
 /* Begin PBXFileReference section */
 		B4075BA42123D24400D98E58 /* wolf.atlas */ = {isa = PBXFileReference; lastKnownFileType = folder.skatlas; path = wolf.atlas; sourceTree = "<group>"; };
-		B4075BA62123DAD100D98E58 /* knight.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = knight.png; path = Assets.xcassets/knight.png; sourceTree = "<group>"; };
+		B4075BB02123FA2C00D98E58 /* playground.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = playground.png; path = Assets.xcassets/playground.png; sourceTree = "<group>"; };
+		B4075BB12123FA2C00D98E58 /* knight.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = knight.png; path = Assets.xcassets/knight.png; sourceTree = "<group>"; };
 		B4C8D8C321082B6C008962B3 /* BewareTheWerewolf.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BewareTheWerewolf.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B4C8D8C621082B6C008962B3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B4C8D8C821082B6C008962B3 /* GameScene.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = GameScene.sks; sourceTree = "<group>"; };
@@ -49,7 +51,8 @@
 			isa = PBXGroup;
 			children = (
 				B4C8D8D321082B6D008962B3 /* Assets.xcassets */,
-				B4075BA62123DAD100D98E58 /* knight.png */,
+				B4075BB12123FA2C00D98E58 /* knight.png */,
+				B4075BB02123FA2C00D98E58 /* playground.png */,
 				B4075BA42123D24400D98E58 /* wolf.atlas */,
 			);
 			path = Assets;
@@ -154,10 +157,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				B4C8D8D221082B6C008962B3 /* Main.storyboard in Resources */,
+				B4075BB22123FA2C00D98E58 /* playground.png in Resources */,
+				B4075BB32123FA2C00D98E58 /* knight.png in Resources */,
 				B4075BA52123D24400D98E58 /* wolf.atlas in Resources */,
 				B4C8D8C921082B6C008962B3 /* GameScene.sks in Resources */,
 				B4C8D8D421082B6D008962B3 /* Assets.xcassets in Resources */,
-				B4075BA72123DAD200D98E58 /* knight.png in Resources */,
 				B4C8D8D721082B6D008962B3 /* LaunchScreen.storyboard in Resources */,
 				B4C8D8CB21082B6C008962B3 /* Actions.sks in Resources */,
 			);
