@@ -19,12 +19,17 @@ class GameScene: SKScene {
     let knightSpeed: CGFloat = 15.0
     
     var playerShouldMove = true
+    var playerShouldAttack = false
+    var currentAction = "standing"
     var player =  SKSpriteNode()
     var wolfAnimationFrames: [SKTexture] = []
     
     var knights: [SKSpriteNode] = []
     
     var lastTouch: CGPoint? = nil
+    var moveToTouch: CGPoint? = nil
+    var touchTimer: Int = 0
+    var attackTimer: TimeInterval = 0
     
     private var lastUpdateTime : TimeInterval = 0
     
@@ -47,8 +52,7 @@ class GameScene: SKScene {
         buildPlayerAnimation()
         player = SKSpriteNode(texture: wolfAnimationFrames[0])
         player.texture?.filteringMode = SKTextureFilteringMode.nearest
-        player.position.x = frame.midX
-        player.position.y = frame.midY
+        player.position = CGPoint(x: frame.midX, y: frame.midY)
         player.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 23.0, height: 16.0))
         player.physicsBody?.affectedByGravity = false
         player.physicsBody?.allowsRotation = false
@@ -83,7 +87,7 @@ class GameScene: SKScene {
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-       handleTouches(touches)
+        handleTouches(touches)
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -95,8 +99,38 @@ class GameScene: SKScene {
     }
     
     fileprivate func handleTouches(_ touches: Set<UITouch>) {
+        print("touch!", touchTimer)
+        
         lastTouch = touches.first?.location(in: self)
-        playerShouldMove = true;
+        if (moveToTouch == nil) {
+            moveToTouch = lastTouch;
+        }
+        
+        print(lastTouch!, moveToTouch!)
+        
+        if (touchTimer > 0 && abs(distance(moveToTouch!, lastTouch!)) < 3) {
+            // Two or more fast touches close together, so the player should attack not move
+            playerShouldAttack = true
+            playerShouldMove = false
+        } else if (touchTimer <= 0) {
+            touchTimer = 15
+            // A quick timer to count time between touches
+            let wait = SKAction.wait(forDuration: 0.05) //change countdown speed here
+            let tick = SKAction.run({
+                [unowned self] in
+                
+                if self.touchTimer > 0{
+                    self.touchTimer -= 1
+                }else{
+                    self.removeAction(forKey: "touchTimer")
+                }
+            })
+            let sequence = SKAction.sequence([wait,tick])
+            
+            run(SKAction.repeatForever(sequence), withKey: "touchTimer")
+            
+            playerShouldMove = true
+        }
     }
     
     
@@ -111,28 +145,39 @@ class GameScene: SKScene {
         // Calculate time since last update
         let _ = currentTime - self.lastUpdateTime
         
-        updatePlayer();
+        updatePlayer(currentTime: currentTime);
         updateEnemies();
         
         
         self.lastUpdateTime = currentTime
     }
     
-    func updatePlayer() {
-        let position = player.position
+    func updatePlayer(currentTime: TimeInterval) {
+        print("current action", currentAction)
         
+        // MOVING
         if (lastTouch == nil) {
             return
         }
         
+        let position = player.position
+        
         if (shouldPlayerMove(currentPosition: position, touchPosition: lastTouch!)) {
-            updatePosition(for: player, to: lastTouch!, speed: playerSpeed)
+            currentAction = "walking"
+            movePlayer(for: player, to: lastTouch!, speed: playerSpeed)
         } else if (shouldPlayerStop(currentPosition: position, touchPosition: lastTouch!)) {
             player.physicsBody?.velocity = CGVector(dx: 0.0, dy: 0.0)
             player.removeAllActions()
             player.texture = wolfAnimationFrames[0]
+            currentAction = "standing"
         }
-        
+    
+        // ATTACKING
+        if (playerShouldAttack) {
+            currentAction = "attacking"
+            playerAttack(currentTime: currentTime)
+            
+        }
     }
     
     
@@ -145,9 +190,23 @@ class GameScene: SKScene {
 //        }
     }
     
-    fileprivate func updatePosition(for sprite: SKSpriteNode,
-                                    to target: CGPoint,
-                                    speed: CGFloat) {
+    fileprivate func playerAttack(currentTime: TimeInterval) {
+        if (attackTimer == 0) {
+            attackTimer = currentTime
+            print("STARTING TIMER", attackTimer)
+            
+        } else {
+            if (currentTime - attackTimer >= 1.5) {
+                print("ENDING ATTACK")
+                attackTimer = 0;
+                playerShouldAttack = false
+                currentAction = "standing"
+            }
+        }
+        
+    }
+    
+    fileprivate func movePlayer(for sprite: SKSpriteNode, to target: CGPoint, speed: CGFloat) {
         let currentPosition = sprite.position
         let angle = CGFloat.pi + atan2(currentPosition.y - target.y, currentPosition.x - target.x)
         
@@ -167,23 +226,25 @@ class GameScene: SKScene {
         }
         
         
-        
         let velocityX = speed * cos(angle)
         let velocityY = speed * sin(angle)
         
         let newVelocity = CGVector(dx: velocityX, dy: velocityY)
         sprite.physicsBody?.velocity = newVelocity
         
-        playerShouldMove = false
+        moveToTouch = target
     }
     
     fileprivate func shouldPlayerMove(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
-        return playerShouldMove && abs(distance(currentPosition, touchPosition)) > player.frame.width / 4
+        return !playerShouldAttack
+            && playerShouldMove
+            && abs(distance(currentPosition, touchPosition)) > player.frame.width / 4
     }
     
     fileprivate func shouldPlayerStop(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
-        return abs(distance(currentPosition, touchPosition)) < player.frame.width / 4
-        
+        return currentAction == "walking"
+            && !playerShouldMove
+            || abs(distance(currentPosition, touchPosition)) < player.frame.width / 4
     }
     
     // Custom collision handler
