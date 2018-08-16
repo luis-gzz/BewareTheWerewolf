@@ -14,30 +14,44 @@ class GameViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        // Load 'GameScene.sks' as a GKScene. This provides gameplay related content
-        // including entities and graphs.
-        if let scene = GKScene(fileNamed: "GameScene") {
-            
-            // Get the SKScene from the loaded GKScene
-            if let sceneNode = scene.rootNode as! GameScene? {
-                
-                // Copy gameplay related content over to the scene
-                sceneNode.entities = scene.entities
-                sceneNode.graphs = scene.graphs
-                
-                // Set the scale mode to scale to fit the window
-                sceneNode.scaleMode = .aspectFill
-                
-                // Present the scene
-                if let view = self.view as! SKView? {
-                    view.presentScene(sceneNode)
-                    view.ignoresSiblingOrder = true
-                    view.showsFPS = true
-                    view.showsNodeCount = true
-                }
-            }
+        var sceneSize = CGSize(width: 270.0, height: 480.0)
+        if (UIScreen.main.nativeBounds.height == 2436) {
+            sceneSize = CGSize(width: 270.0, height: 585.0)
         }
+        
+        
+        if let view = view as? SKView {
+            // Create the scene programmatically
+            let scene = GameScene(size: sceneSize)
+            
+            scene.scaleMode = .aspectFill
+            
+            view.ignoresSiblingOrder = true
+            view.showsFPS = true
+            view.showsNodeCount = true
+            view.presentScene(scene)
+        }
+        
+        
+//        // Load 'GameScene.sks' as a GKScene. This provides gameplay related content
+//        // including entities and graphs.
+//        if let scene = GKScene(fileNamed: sceneName) {
+//
+//            // Get the SKScene from the loaded GKScene
+//            if let sceneNode = scene.rootNode as! GameScene? {
+//
+//                // Set the scale mode to scale to fit the window
+//                sceneNode.scaleMode = .aspectFill
+//
+//                // Present the scene
+//                if let view = self.view as! SKView? {
+//                    view.presentScene(sceneNode)
+//                    view.ignoresSiblingOrder = true
+//                    view.showsFPS = true
+//                    view.showsNodeCount = true
+//                }
+//            }
+//        }
     }
 
     override var shouldAutorotate: Bool {
