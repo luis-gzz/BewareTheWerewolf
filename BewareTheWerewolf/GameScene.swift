@@ -15,7 +15,8 @@ class GameScene: SKScene {
     var playground = SKSpriteNode()
     
     // Entity values
-    let playerSpeed: CGFloat = 45.0
+    let wolfSpeed: CGFloat = 45.0
+    let wolfAttackSpeed: CGFloat = 200.0
     let knightSpeed: CGFloat = 15.0
     
     var playerShouldMove = true
@@ -30,6 +31,8 @@ class GameScene: SKScene {
     var moveToTouch: CGPoint? = nil
     var touchTimer: Int = 0
     var attackTimer: TimeInterval = 0
+    
+    var stoppingPt: CGPoint = CGPoint(x:0, y:0)
     
     private var lastUpdateTime : TimeInterval = 0
     
@@ -160,12 +163,13 @@ class GameScene: SKScene {
             return
         }
         
+        
         let position = player.position
         
         if (shouldPlayerMove(currentPosition: position, touchPosition: lastTouch!)) {
             currentAction = "walking"
-            movePlayer(for: player, to: lastTouch!, speed: playerSpeed)
-        } else if (shouldPlayerStop(currentPosition: position, touchPosition: lastTouch!)) {
+            movePlayer(for: player, to: lastTouch!, speed: wolfSpeed)
+        } else if (shouldPlayerWalkStop(currentPosition: position, touchPosition: lastTouch!)) {
             player.physicsBody?.velocity = CGVector(dx: 0.0, dy: 0.0)
             player.removeAllActions()
             player.texture = wolfAnimationFrames[0]
@@ -175,33 +179,41 @@ class GameScene: SKScene {
         // ATTACKING
         if (playerShouldAttack) {
             currentAction = "attacking"
-            playerAttack(currentTime: currentTime)
+            playerAttack(for: player, to:lastTouch!, currentTime: currentTime, speed: wolfAttackSpeed)
             
+        }
+        
+        if (shouldPlayerAttackStop(currentPosition: position, touchPosition: stoppingPt)) {
+            player.physicsBody?.velocity = CGVector(dx: 0.0, dy: 0.0)
+            player.removeAllActions()
+            player.texture = wolfAnimationFrames[0]
+            attackTimer = 1
         }
     }
     
-    
-    func updateEnemies() {
-//        for knight in knights {
-//            let targetPosition = player.position
-//
-//
-//            updatePosition(for: knight, to: targetPosition!, speed: knightSpeed)
-//        }
-    }
-    
-    fileprivate func playerAttack(currentTime: TimeInterval) {
+    fileprivate func playerAttack(for sprite: SKSpriteNode, to target: CGPoint, currentTime: TimeInterval, speed: CGFloat) {
+        
         if (attackTimer == 0) {
             attackTimer = currentTime
+           
+            let currentPosition = sprite.position
+            let angle = CGFloat.pi + atan2(currentPosition.y - target.y, currentPosition.x - target.x)
+            stoppingPt = CGPoint(x: 65 * cos(angle) + currentPosition.x, y: 65 * sin(angle) + currentPosition.y)
+            print(currentPosition, stoppingPt, target)
+            let velocityX = speed * cos(angle)
+            let velocityY = speed * sin(angle)
+            
+            let newVelocity = CGVector(dx: velocityX, dy: velocityY)
+            sprite.physicsBody?.velocity = newVelocity
+            
             print("STARTING TIMER", attackTimer)
             
-        } else {
-            if (currentTime - attackTimer >= 1.5) {
+        } else if (currentTime - attackTimer >= 1) {
                 print("ENDING ATTACK")
                 attackTimer = 0;
                 playerShouldAttack = false
                 currentAction = "standing"
-            }
+            
         }
         
     }
@@ -241,19 +253,34 @@ class GameScene: SKScene {
             && abs(distance(currentPosition, touchPosition)) > player.frame.width / 4
     }
     
-    fileprivate func shouldPlayerStop(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
+    fileprivate func shouldPlayerWalkStop(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
         return currentAction == "walking"
-            && !playerShouldMove
-            || abs(distance(currentPosition, touchPosition)) < player.frame.width / 4
+            && (!playerShouldMove
+            || abs(distance(currentPosition, touchPosition)) < player.frame.width / 4)
     }
     
-    // Custom collision handler
+    fileprivate func shouldPlayerAttackStop(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
+        return currentAction == "attacking"
+            && abs(distance(currentPosition, touchPosition)) < player.frame.width / 7
+    }
+    
+    // ==== Enemey Actions ====
+    func updateEnemies() {
+        //        for knight in knights {
+        //            let targetPosition = player.position
+        //
+        //
+        //            updatePosition(for: knight, to: targetPosition!, speed: knightSpeed)
+        //        }
+    }
+    
+    // ==== Collissions and physics ====
     func projectileDidCollideWithEnemy(projectile: SKSpriteNode, enemy: SKSpriteNode) {
         projectile.removeFromParent()
         enemy.removeFromParent()
     }
     
-    
+    // ==== Functions to build enemy and player animations ====
     func buildPlayerAnimation() {
 //        Stand - 0,
 //        Walk1 - 1, Walk2 - 2, Walk3 - 3, Walk4 - 4
