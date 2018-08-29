@@ -13,17 +13,14 @@ class GameScene: SKScene {
     
     // Playground
     var playground = SKSpriteNode()
+    var moon = Moon(x: 0, y: 0)
     
     // Entity values
     let wolfSpeed: CGFloat = 45.0
-    let wolfAttackSpeed: CGFloat = 200.0
+    let wolfAttackSpeed: CGFloat = 175.0
     let knightSpeed: CGFloat = 15.0
     
-    var playerShouldMove = true
-    var playerShouldAttack = false
-    var currentAction = "standing"
-    var player =  SKSpriteNode()
-    var wolfAnimationFrames: [SKTexture] = []
+    var player = Player(midX: 0, midY: 0, scene: nil)
     
     var knights: [SKSpriteNode] = []
     
@@ -31,8 +28,6 @@ class GameScene: SKScene {
     var moveToTouch: CGPoint? = nil
     var touchTimer: Int = 0
     var attackTimer: TimeInterval = 0
-    
-    var stoppingPt: CGPoint = CGPoint(x:0, y:0)
     
     private var lastUpdateTime : TimeInterval = 0
     
@@ -51,17 +46,11 @@ class GameScene: SKScene {
         playground.zPosition = -1.0
         addChild(playground)
         
-        //Set up the player
-        buildPlayerAnimation()
-        player = SKSpriteNode(texture: wolfAnimationFrames[0])
-        player.texture?.filteringMode = SKTextureFilteringMode.nearest
-        player.position = CGPoint(x: frame.midX, y: frame.midY)
-        player.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 23.0, height: 16.0))
-        player.physicsBody?.affectedByGravity = false
-        player.physicsBody?.allowsRotation = false
-        player.physicsBody?.isDynamic = true
+        moon = Moon(x: frame.midX, y: frame.height)
+        addChild(moon.sprite)
         
-        addChild(player)
+        player = Player(midX: frame.midX, midY: frame.midY, scene: self)
+        addChild(player.sprite)
         
     }
     
@@ -111,10 +100,10 @@ class GameScene: SKScene {
         
         print(lastTouch!, moveToTouch!)
         
-        if (touchTimer > 0 && abs(distance(moveToTouch!, lastTouch!)) < 3) {
+        if (touchTimer > 0 && abs(distance(moveToTouch!, lastTouch!)) < 25) {
             // Two or more fast touches close together, so the player should attack not move
-            playerShouldAttack = true
-            playerShouldMove = false
+            player.shouldAttack = true
+            player.shouldMove = false
         } else if (touchTimer <= 0) {
             touchTimer = 15
             // A quick timer to count time between touches
@@ -132,7 +121,7 @@ class GameScene: SKScene {
             
             run(SKAction.repeatForever(sequence), withKey: "touchTimer")
             
-            playerShouldMove = true
+            player.shouldMove = true
         }
     }
     
@@ -151,12 +140,14 @@ class GameScene: SKScene {
         updatePlayer(currentTime: currentTime);
         updateEnemies();
         
+        moon.cycle(player: player)
+        
         
         self.lastUpdateTime = currentTime
     }
     
     func updatePlayer(currentTime: TimeInterval) {
-        print("current action", currentAction)
+        //print("current action", player.currentAction)
         
         // MOVING
         if (lastTouch == nil) {
@@ -164,29 +155,29 @@ class GameScene: SKScene {
         }
         
         
-        let position = player.position
+        let position = player.sprite.position
         
         if (shouldPlayerMove(currentPosition: position, touchPosition: lastTouch!)) {
-            currentAction = "walking"
-            movePlayer(for: player, to: lastTouch!, speed: wolfSpeed)
+            player.currentAction = "walking"
+            movePlayer(for: player.sprite, to: lastTouch!, speed: wolfSpeed)
         } else if (shouldPlayerWalkStop(currentPosition: position, touchPosition: lastTouch!)) {
-            player.physicsBody?.velocity = CGVector(dx: 0.0, dy: 0.0)
-            player.removeAllActions()
-            player.texture = wolfAnimationFrames[0]
-            currentAction = "standing"
+            player.sprite.physicsBody?.velocity = CGVector(dx: 0.0, dy: 0.0)
+            player.sprite.removeAction(forKey: "playerWalk")
+            player.sprite.texture = player.getStandingFrames()
+            player.currentAction = "standing"
         }
     
         // ATTACKING
-        if (playerShouldAttack) {
-            currentAction = "attacking"
-            playerAttack(for: player, to:lastTouch!, currentTime: currentTime, speed: wolfAttackSpeed)
+        if (player.shouldAttack) {
+            player.currentAction = "attacking"
+            playerAttack(for: player.sprite, to:lastTouch!, currentTime: currentTime, speed: wolfAttackSpeed)
             
         }
         
-        if (shouldPlayerAttackStop(currentPosition: position, touchPosition: stoppingPt)) {
-            player.physicsBody?.velocity = CGVector(dx: 0.0, dy: 0.0)
-            player.removeAllActions()
-            player.texture = wolfAnimationFrames[0]
+        if (shouldPlayerAttackStop(currentPosition: position, touchPosition: player.stoppingPt)) {
+            player.sprite.physicsBody?.velocity = CGVector(dx: 0.0, dy: 0.0)
+            player.sprite.removeAction(forKey: "playerAttack")
+            player.sprite.texture = player.getStandingFrames()
             attackTimer = 1
         }
     }
@@ -198,21 +189,26 @@ class GameScene: SKScene {
            
             let currentPosition = sprite.position
             let angle = CGFloat.pi + atan2(currentPosition.y - target.y, currentPosition.x - target.x)
-            stoppingPt = CGPoint(x: 65 * cos(angle) + currentPosition.x, y: 65 * sin(angle) + currentPosition.y)
-            print(currentPosition, stoppingPt, target)
+            player.setStoppingPoint(angle: angle)
+            
             let velocityX = speed * cos(angle)
             let velocityY = speed * sin(angle)
             
             let newVelocity = CGVector(dx: velocityX, dy: velocityY)
             sprite.physicsBody?.velocity = newVelocity
+        
+            let attack = SKAction.animate(with: player.getAttackingFrames(), timePerFrame: 0.15)
+            sprite.run(attack, withKey: "playerAttack")
+            
+            
             
             print("STARTING TIMER", attackTimer)
             
         } else if (currentTime - attackTimer >= 1) {
                 print("ENDING ATTACK")
                 attackTimer = 0;
-                playerShouldAttack = false
-                currentAction = "standing"
+                player.shouldAttack = false
+                player.currentAction = "standing"
             
         }
         
@@ -224,17 +220,17 @@ class GameScene: SKScene {
         
         
         if (target.x < currentPosition.x) {
-            let flip = SKAction.scaleX(to: -1, duration: 0)
+            let flip = SKAction.scaleX(to: -abs(player.sprite.xScale), duration: 0)
             sprite.run(flip)
         } else if (target.x >= currentPosition.x) {
-            let flip = SKAction.scaleX(to: 1, duration: 0)
+            let flip = SKAction.scaleX(to: abs(player.sprite.xScale), duration: 0)
             sprite.run(flip)
         }
         
-        if sprite.action(forKey: "wolfWalk") == nil {
+        if sprite.action(forKey: "playerWalk") == nil {
             // if legs are not moving, start them
-            let walk = SKAction.animate(with: Array(wolfAnimationFrames[1...4]), timePerFrame: 0.2)
-            sprite.run(SKAction.repeatForever(walk), withKey: "wolfWalk")
+            let walk = SKAction.animate(with: player.getWalkingFrames(), timePerFrame: 0.2)
+            sprite.run(SKAction.repeatForever(walk), withKey: "playerWalk")
         }
         
         
@@ -248,20 +244,21 @@ class GameScene: SKScene {
     }
     
     fileprivate func shouldPlayerMove(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
-        return !playerShouldAttack
-            && playerShouldMove
-            && abs(distance(currentPosition, touchPosition)) > player.frame.width / 4
+        return player.currentAction != "transforming"
+            && !player.shouldAttack
+            && player.shouldMove
+            && abs(distance(currentPosition, touchPosition)) > player.sprite.frame.width / 4
     }
     
     fileprivate func shouldPlayerWalkStop(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
-        return currentAction == "walking"
-            && (!playerShouldMove
-            || abs(distance(currentPosition, touchPosition)) < player.frame.width / 4)
+        return player.currentAction == "walking"
+            && (!player.shouldMove
+            || abs(distance(currentPosition, touchPosition)) < player.sprite.frame.width / 4)
     }
     
     fileprivate func shouldPlayerAttackStop(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
-        return currentAction == "attacking"
-            && abs(distance(currentPosition, touchPosition)) < player.frame.width / 7
+        return player.currentAction == "attacking"
+            && abs(distance(currentPosition, touchPosition)) < player.sprite.frame.width / 7
     }
     
     // ==== Enemey Actions ====
@@ -280,25 +277,14 @@ class GameScene: SKScene {
         enemy.removeFromParent()
     }
     
-    // ==== Functions to build enemy and player animations ====
-    func buildPlayerAnimation() {
-//        Stand - 0,
-//        Walk1 - 1, Walk2 - 2, Walk3 - 3, Walk4 - 4
-//        Attack1 - 5, Attack2 - 6, Attack3 - 7
-//        Damage1 - 8, Damage2 - 9
-//        Die1 - 10, Die2 - 11, Die3 - 12, Die4 - 13, Die5 - 14
-
-        let wolfAnimatedAtlas = SKTextureAtlas(named: "wolf")
-        var animFrames: [SKTexture] = []
-        
-        let numImages = wolfAnimatedAtlas.textureNames.count
-        for i in 1...numImages {
-            let wolfTextureName = "wolf\(i-1)"
-            
-            animFrames.append(wolfAnimatedAtlas.textureNamed(wolfTextureName))
-        }
-        wolfAnimationFrames = animFrames
+    func shake() {
+//        if (/*moon.isFull*/ player.currentAction != "transforming") {
+            player.switchMode()
+//        }
+    
     }
+    
+    
     
 }
 
