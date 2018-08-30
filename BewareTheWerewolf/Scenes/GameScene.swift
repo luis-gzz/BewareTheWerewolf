@@ -13,6 +13,8 @@ class GameScene: SKScene {
     
     // Playground
     var playground = SKSpriteNode()
+    var upperBound = CGFloat(0.0)
+    var lowerBound = CGFloat(0.0)
     var moon = Moon(x: 0, y: 0)
     
     // Entity values
@@ -36,15 +38,21 @@ class GameScene: SKScene {
         
         //Setup the playground
         if (UIScreen.main.nativeBounds.height == 2436) {
-            playground = SKSpriteNode(imageNamed: "playgroundX")
+            playground = SKSpriteNode(texture: SKTexture(imageNamed: "playgroundX"))
+            upperBound = CGFloat(455.0)
+            lowerBound = CGFloat(125.0)
         } else {
-            playground = SKSpriteNode(imageNamed: "playground")
+            playground = SKSpriteNode(texture: SKTexture(imageNamed: "playground"))
+            upperBound = CGFloat(367.0)
+            lowerBound = CGFloat(120.0)
         }
         
         playground.texture?.filteringMode = SKTextureFilteringMode.nearest
         playground.position = CGPoint(x: frame.midX, y: frame.midY)
         playground.zPosition = -1.0
         addChild(playground)
+        
+        
         
         moon = Moon(x: frame.midX, y: frame.height)
         addChild(moon.sprite)
@@ -59,6 +67,7 @@ class GameScene: SKScene {
     }
     
     override func didMove(to view: SKView) {
+        self.isPaused = false
         // This func is called when the scene is first presented
         self.lastUpdateTime = 0
         physicsWorld.contactDelegate = self
@@ -91,38 +100,41 @@ class GameScene: SKScene {
     }
     
     fileprivate func handleTouches(_ touches: Set<UITouch>) {
-        print("touch!", touchTimer)
-        
-        lastTouch = touches.first?.location(in: self)
-        if (moveToTouch == nil) {
-            moveToTouch = lastTouch;
-        }
-        
-        print(lastTouch!, moveToTouch!)
-        
-        if (touchTimer > 0 && abs(distance(moveToTouch!, lastTouch!)) < 25) {
-            // Two or more fast touches close together, so the player should attack not move
-            player.shouldAttack = true
-            player.shouldMove = false
-        } else if (touchTimer <= 0) {
-            touchTimer = 15
-            // A quick timer to count time between touches
-            let wait = SKAction.wait(forDuration: 0.05) //change countdown speed here
-            let tick = SKAction.run({
-                [unowned self] in
+        if ((touches.first?.location(in: self).y)! < upperBound && (touches.first?.location(in: self).y)! > lowerBound) {
+            print("Touch Inbounds")
+            print("touch!", touchTimer)
+            
+            lastTouch = touches.first?.location(in: self)
+            if (moveToTouch == nil) {
+                moveToTouch = lastTouch;
+            }
+            print(lastTouch!, moveToTouch!)
+            
+            if (touchTimer > 0 && abs(distance(moveToTouch!, lastTouch!)) < 25) {
+                // Two or more fast touches close together, so the player should attack not move
+                player.shouldAttack = true
+                player.shouldMove = false
+            } else if (touchTimer <= 0) {
+                touchTimer = 15
+                // A quick timer to count time between touches
+                let wait = SKAction.wait(forDuration: 0.05) //change countdown speed here
+                let tick = SKAction.run({
+                    [unowned self] in
+                    
+                    if self.touchTimer > 0{
+                        self.touchTimer -= 1
+                    }else{
+                        self.removeAction(forKey: "touchTimer")
+                    }
+                })
+                let sequence = SKAction.sequence([wait,tick])
                 
-                if self.touchTimer > 0{
-                    self.touchTimer -= 1
-                }else{
-                    self.removeAction(forKey: "touchTimer")
-                }
-            })
-            let sequence = SKAction.sequence([wait,tick])
-            
-            run(SKAction.repeatForever(sequence), withKey: "touchTimer")
-            
-            player.shouldMove = true
+                run(SKAction.repeatForever(sequence), withKey: "touchTimer")
+                
+                player.shouldMove = true
+            }
         }
+        
     }
     
     
@@ -258,7 +270,7 @@ class GameScene: SKScene {
     
     fileprivate func shouldPlayerAttackStop(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
         return player.currentAction == "attacking"
-            && abs(distance(currentPosition, touchPosition)) < player.sprite.frame.width / 7
+            && abs(distance(currentPosition, touchPosition)) < player.sprite.frame.width / 4
     }
     
     // ==== Enemey Actions ====
@@ -278,9 +290,9 @@ class GameScene: SKScene {
     }
     
     func shake() {
-//        if (/*moon.isFull*/ player.currentAction != "transforming") {
+        if (moon.isFull) {
             player.switchMode()
-//        }
+        }
     
     }
     

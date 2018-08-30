@@ -15,7 +15,7 @@ class Player {
     var scenePtr: GameScene?
     
     var isWere = false
-    var shouldMove = true
+    var shouldMove = false
     var shouldAttack = false
     var currentAction = "standing"
     var wolfAnimationFrames: [SKTexture] = []
@@ -35,7 +35,7 @@ class Player {
         isWere = true
         sprite = SKSpriteNode(texture: getStandingFrames())
         self.isWere = false
-        self.sprite.texture = self.tobiasAnimationFrames[0]
+        self.sprite.texture = tobiasAnimationFrames[0]
         self.sprite.texture?.filteringMode = SKTextureFilteringMode.nearest
         self.sprite.setScale(0.85)
         
@@ -48,8 +48,8 @@ class Player {
     
     func setStoppingPoint(angle: CGFloat) {
         if (isWere) {
-            stoppingPt = CGPoint(x: 75 * cos(angle) + sprite.position.x, y: 75 * sin(angle) + sprite.position.y)
-        } else {
+            stoppingPt = CGPoint(x: 85 * cos(angle) + sprite.position.x, y: 85 * sin(angle) + sprite.position.y)
+        } else if (!isWere) {
             stoppingPt = CGPoint(x: 65 * cos(angle) + sprite.position.x, y: 65  * sin(angle) + sprite.position.y)
         }
     }

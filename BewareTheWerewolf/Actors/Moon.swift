@@ -15,7 +15,7 @@ class Moon {
     var isWere = true
     var stage = 1;
     var isFull = false
-    var fastnest = CGFloat(1.25)
+    var fastnest = -20.0
     var startX = CGFloat(0.0)
     var moonFrames: [SKTexture] = []
     
@@ -26,17 +26,22 @@ class Moon {
         sprite = SKSpriteNode(texture: moonFrames[stage])
         sprite.texture?.filteringMode = SKTextureFilteringMode.nearest
         if (y > 480.0) {
-            sprite.position = CGPoint(x: 2 * x + sprite.size.width, y: y - 75)
+            sprite.position = CGPoint(x:  x + sprite.size.width, y: y - 75)
         } else {
-            sprite.position = CGPoint(x: 2 * x + sprite.size.width, y: y - 55)
+            sprite.position = CGPoint(x: x + sprite.size.width, y: y - 55)
         }
         startX = 2 * x + sprite.size.width;
         
+        sprite.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 28.0, height: 28.0))
+        sprite.physicsBody?.affectedByGravity = false
+        sprite.physicsBody?.allowsRotation = false
+        sprite.physicsBody?.isDynamic = true
+        sprite.physicsBody?.velocity = CGVector(dx: fastnest, dy: 0.0)
         
     }
     
     func cycle(player: Player) {
-        sprite.position.x = sprite.position.x - fastnest
+        sprite.physicsBody?.velocity = CGVector(dx: fastnest, dy: 0.0)
         
         if (sprite.position.x < -sprite.size.width / 2) {
             stage = stage + 1;
@@ -48,15 +53,17 @@ class Moon {
             sprite.position.x = startX
             
             if (stage == 4){
-                fastnest = CGFloat(0.25)
+                fastnest = -5.0
                 isFull = true
                 //player.switchMode()
             } else if (stage ==  5) {
-                fastnest = CGFloat(1.5)
+                fastnest = -20.0
                 isFull = false
-               // player.switchMode()
+                if (player.isWere) {
+                    player.switchMode()
+                }
             } else {
-                fastnest = CGFloat(1.5)
+                fastnest = -20.0
                 isFull = false
             }
         }
