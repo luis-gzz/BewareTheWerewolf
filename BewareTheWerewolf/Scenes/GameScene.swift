@@ -23,14 +23,21 @@ class GameScene: SKScene {
     let knightSpeed: CGFloat = 15.0
     
     var player = Player(midX: 0, midY: 0, scene: nil)
-    
     var knights: [SKSpriteNode] = []
+    
+    // Physics
+    struct PhysicsCategory {
+        static let none     : UInt32    = 0
+        static let all      : UInt32    = UInt32.max
+        static let player   : UInt32    = 0b0001        // 1
+        static let edge     : UInt32    = 0b0010        // 2
+    }
     
     var lastTouch: CGPoint? = nil
     var moveToTouch: CGPoint? = nil
     var touchTimer: Int = 0
-    var attackTimer: TimeInterval = 0
     
+    var attackTimer: TimeInterval = 0
     private var lastUpdateTime : TimeInterval = 0
     
     override init(size: CGSize) {
@@ -58,8 +65,8 @@ class GameScene: SKScene {
         player = Player(midX: frame.midX, midY: frame.midY, scene: self)
         addChild(player.sprite)
         
-        physicsBody = SKPhysicsBody(edgeLoopFrom: CGRect(origin: CGPoint(x: 0, y: lowerBound), size: CGSize(width: size.width, height: upperBound - lowerBound )))
-        physicsBody?.restitution = 0.0
+        setUpPhysics()
+        
         
     }
     
@@ -68,9 +75,9 @@ class GameScene: SKScene {
     }
     
     override func didMove(to view: SKView) {
-        self.isPaused = false
+        isPaused = false
         // This func is called when the scene is first presented
-        self.lastUpdateTime = 0
+        lastUpdateTime = 0
         physicsWorld.contactDelegate = self
         
         
@@ -86,6 +93,20 @@ class GameScene: SKScene {
         }
         
        
+    }
+    
+    func setUpPhysics() {
+        player.sprite.physicsBody?.categoryBitMask = PhysicsCategory.player
+        player.sprite.physicsBody?.contactTestBitMask =  PhysicsCategory.edge
+        player.sprite.physicsBody?.collisionBitMask =  PhysicsCategory.edge
+        
+        physicsBody = SKPhysicsBody(edgeLoopFrom: CGRect(origin: CGPoint(x: 0, y: lowerBound), size: CGSize(width: size.width, height: upperBound - lowerBound )))
+        physicsBody?.restitution = 0.0
+        
+        physicsBody?.categoryBitMask = PhysicsCategory.edge
+        physicsBody?.contactTestBitMask = PhysicsCategory.player
+        physicsBody?.collisionBitMask = PhysicsCategory.player
+
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -155,7 +176,6 @@ class GameScene: SKScene {
         
         moon.cycle(player: player)
         
-        
         self.lastUpdateTime = currentTime
     }
     
@@ -166,7 +186,6 @@ class GameScene: SKScene {
         if (lastTouch == nil) {
             return
         }
-        
         
         let position = player.sprite.position
         
@@ -271,7 +290,8 @@ class GameScene: SKScene {
     
     fileprivate func shouldPlayerAttackStop(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
         return player.currentAction == "attacking"
-            && abs(distance(currentPosition, touchPosition)) < player.sprite.frame.width / 4
+            && (!player.shouldAttack
+            || abs(distance(currentPosition, touchPosition)) < player.sprite.frame.width / 4)
     }
     
     // ==== Enemey Actions ====
@@ -290,10 +310,14 @@ class GameScene: SKScene {
         enemy.removeFromParent()
     }
     
+    func playerDidHitEdge() {
+        print("Hit edge")
+        player.shouldAttack = false
+    }
+    
     func shake() {
-        //if (moon.isFull) {
+        //For testing purposes a hardware shake will turn the player into a werewolf
             player.switchMode()
-        //}
     }
     
     
@@ -313,13 +337,18 @@ extension GameScene: SKPhysicsContactDelegate {
             secondBody = contact.bodyA
         }
         
-//        if ((firstBody.categoryBitMask & PhysicsCategory.monster != 0) &&
-//            (secondBody.categoryBitMask & PhysicsCategory.projectile != 0)) {
-//            if let monster = firstBody.node as? SKSpriteNode,
-//                let projectile = secondBody.node as? SKSpriteNode {
-//                projectileDidCollideWithEnemy(projectile: projectile, enemy: monster)
-//            }
-//        }
+        if ((contact.bodyA.node == player.sprite || contact.bodyB.node == player.sprite)
+            && (contact.bodyA.node == self || contact.bodyB.node == self)) {
+            playerDidHitEdge()
+        }
+        
+        if ((firstBody.categoryBitMask & PhysicsCategory.player != 0) &&
+            (secondBody.categoryBitMask & PhysicsCategory.edge != 0)) {
+            if let monster = firstBody.node as? SKSpriteNode,
+                let projectile = secondBody.node as? SKSpriteNode {
+                projectileDidCollideWithEnemy(projectile: projectile, enemy: monster)
+            }
+        }
     }
     
 }
