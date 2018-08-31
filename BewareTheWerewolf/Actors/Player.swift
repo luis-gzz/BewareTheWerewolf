@@ -21,6 +21,7 @@ class Player {
     var wolfAnimationFrames: [SKTexture] = []
     var tobiasAnimationFrames: [SKTexture] = []
     
+    var skullCounter = 0
     var stoppingPt: CGPoint = CGPoint(x:0, y:0)
     
     init(midX: CGFloat, midY: CGFloat, scene: GameScene?) {
@@ -40,18 +41,21 @@ class Player {
         self.sprite.setScale(0.85)
         
         sprite.position = CGPoint(x: midX, y: midY)
-        sprite.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 23.0, height: 16.0))
+        sprite.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 10.0, height: 16.0))
         sprite.physicsBody?.affectedByGravity = false
         sprite.physicsBody?.allowsRotation = false
         sprite.physicsBody?.isDynamic = true
+        sprite.physicsBody?.restitution = 0.0
     }
     
     func setStoppingPoint(angle: CGFloat) {
         if (isWere) {
             stoppingPt = CGPoint(x: 85 * cos(angle) + sprite.position.x, y: 85 * sin(angle) + sprite.position.y)
+            
         } else if (!isWere) {
             stoppingPt = CGPoint(x: 65 * cos(angle) + sprite.position.x, y: 65  * sin(angle) + sprite.position.y)
         }
+        
     }
     
     func switchMode() {

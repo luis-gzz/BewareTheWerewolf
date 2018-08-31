@@ -18,6 +18,7 @@ class Moon {
     var fastnest = -20.0
     var startX = CGFloat(0.0)
     var moonFrames: [SKTexture] = []
+    var moonSkullCount = 0
     
     init(x: CGFloat, y: CGFloat) {
         // SKSpriteNode
@@ -26,9 +27,9 @@ class Moon {
         sprite = SKSpriteNode(texture: moonFrames[stage])
         sprite.texture?.filteringMode = SKTextureFilteringMode.nearest
         if (y > 480.0) {
-            sprite.position = CGPoint(x:  x + sprite.size.width, y: y - 75)
+            sprite.position = CGPoint(x: 2 * x + sprite.size.width - 100, y: y - 65)
         } else {
-            sprite.position = CGPoint(x: x + sprite.size.width, y: y - 55)
+            sprite.position = CGPoint(x: 2 * x + sprite.size.width - 100, y: y - 55)
         }
         startX = 2 * x + sprite.size.width;
         
@@ -46,17 +47,17 @@ class Moon {
         if (sprite.position.x < -sprite.size.width / 2) {
             stage = stage + 1;
             stage = stage == 1 || stage == 7 ? stage + 1 : stage
-            if (stage == 8) {
+            if (stage == 6) {
                 stage = 0
             }
             sprite.texture = moonFrames[stage];
             sprite.position.x = startX
             
-            if (stage == 4){
+            if (stage == 5){
                 fastnest = -5.0
                 isFull = true
-                //player.switchMode()
-            } else if (stage ==  5) {
+                player.switchMode()
+            } else if (stage ==  0) {
                 fastnest = -20.0
                 isFull = false
                 if (player.isWere) {

@@ -40,11 +40,11 @@ class GameScene: SKScene {
         if (UIScreen.main.nativeBounds.height == 2436) {
             playground = SKSpriteNode(texture: SKTexture(imageNamed: "playgroundX"))
             upperBound = CGFloat(455.0)
-            lowerBound = CGFloat(125.0)
+            lowerBound = CGFloat(135.0)
         } else {
             playground = SKSpriteNode(texture: SKTexture(imageNamed: "playground"))
             upperBound = CGFloat(367.0)
-            lowerBound = CGFloat(120.0)
+            lowerBound = CGFloat(115.0)
         }
         
         playground.texture?.filteringMode = SKTextureFilteringMode.nearest
@@ -52,13 +52,14 @@ class GameScene: SKScene {
         playground.zPosition = -1.0
         addChild(playground)
         
-        
-        
         moon = Moon(x: frame.midX, y: frame.height)
         addChild(moon.sprite)
         
         player = Player(midX: frame.midX, midY: frame.midY, scene: self)
         addChild(player.sprite)
+        
+        physicsBody = SKPhysicsBody(edgeLoopFrom: CGRect(origin: CGPoint(x: 0, y: lowerBound), size: CGSize(width: size.width, height: upperBound - lowerBound )))
+        physicsBody?.restitution = 0.0
         
     }
     
@@ -290,10 +291,9 @@ class GameScene: SKScene {
     }
     
     func shake() {
-        if (moon.isFull) {
+        //if (moon.isFull) {
             player.switchMode()
-        }
-    
+        //}
     }
     
     
