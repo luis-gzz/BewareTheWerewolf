@@ -17,11 +17,6 @@ class GameScene: SKScene {
     var lowerBound = CGFloat(0.0)
     var moon = Moon(x: 0, y: 0)
     
-    // Entity values
-    let wolfSpeed: CGFloat = 45.0
-    let wolfAttackSpeed: CGFloat = 175.0
-    let knightSpeed: CGFloat = 15.0
-    
     var player = Player(midX: 0, midY: 0, scene: nil)
     var knights: [SKSpriteNode] = []
     
@@ -66,8 +61,6 @@ class GameScene: SKScene {
         addChild(player.sprite)
         
         setUpPhysics()
-        
-        
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -159,7 +152,6 @@ class GameScene: SKScene {
         
     }
     
-    
     override func update(_ currentTime: TimeInterval) {
         // Called before each frame is rendered
         
@@ -171,127 +163,12 @@ class GameScene: SKScene {
         // Calculate time since last update
         let _ = currentTime - self.lastUpdateTime
         
-        updatePlayer(currentTime: currentTime);
-        updateEnemies();
-        
+        player.update(currentTime: currentTime);
         moon.cycle(player: player)
         
+        updateEnemies();
+        
         self.lastUpdateTime = currentTime
-    }
-    
-    func updatePlayer(currentTime: TimeInterval) {
-        //print("current action", player.currentAction)
-        
-        // MOVING
-        if (lastTouch == nil) {
-            return
-        }
-        
-        let position = player.sprite.position
-        
-        if (shouldPlayerMove(currentPosition: position, touchPosition: lastTouch!)) {
-            player.currentAction = "walking"
-            movePlayer(for: player.sprite, to: lastTouch!, speed: wolfSpeed)
-        } else if (shouldPlayerWalkStop(currentPosition: position, touchPosition: lastTouch!)) {
-            player.sprite.physicsBody?.velocity = CGVector(dx: 0.0, dy: 0.0)
-            player.sprite.removeAction(forKey: "playerWalk")
-            player.sprite.texture = player.getStandingFrames()
-            player.currentAction = "standing"
-        }
-    
-        // ATTACKING
-        if (player.shouldAttack) {
-            player.currentAction = "attacking"
-            playerAttack(for: player.sprite, to:lastTouch!, currentTime: currentTime, speed: wolfAttackSpeed)
-            
-        }
-        
-        if (shouldPlayerAttackStop(currentPosition: position, touchPosition: player.stoppingPt)) {
-            player.sprite.physicsBody?.velocity = CGVector(dx: 0.0, dy: 0.0)
-            player.sprite.removeAction(forKey: "playerAttack")
-            player.sprite.texture = player.getStandingFrames()
-            attackTimer = 1
-        }
-    }
-    
-    fileprivate func playerAttack(for sprite: SKSpriteNode, to target: CGPoint, currentTime: TimeInterval, speed: CGFloat) {
-        
-        if (attackTimer == 0) {
-            attackTimer = currentTime
-           
-            let currentPosition = sprite.position
-            let angle = CGFloat.pi + atan2(currentPosition.y - target.y, currentPosition.x - target.x)
-            player.setStoppingPoint(angle: angle)
-            
-            let velocityX = speed * cos(angle)
-            let velocityY = speed * sin(angle)
-            
-            let newVelocity = CGVector(dx: velocityX, dy: velocityY)
-            sprite.physicsBody?.velocity = newVelocity
-        
-            let attack = SKAction.animate(with: player.getAttackingFrames(), timePerFrame: 0.15)
-            sprite.run(attack, withKey: "playerAttack")
-            
-            
-            
-            print("STARTING TIMER", attackTimer)
-            
-        } else if (currentTime - attackTimer >= 1) {
-                print("ENDING ATTACK")
-                attackTimer = 0;
-                player.shouldAttack = false
-                player.currentAction = "standing"
-            
-        }
-        
-    }
-    
-    fileprivate func movePlayer(for sprite: SKSpriteNode, to target: CGPoint, speed: CGFloat) {
-        let currentPosition = sprite.position
-        let angle = CGFloat.pi + atan2(currentPosition.y - target.y, currentPosition.x - target.x)
-        
-        
-        if (target.x < currentPosition.x) {
-            let flip = SKAction.scaleX(to: -abs(player.sprite.xScale), duration: 0)
-            sprite.run(flip)
-        } else if (target.x >= currentPosition.x) {
-            let flip = SKAction.scaleX(to: abs(player.sprite.xScale), duration: 0)
-            sprite.run(flip)
-        }
-        
-        if sprite.action(forKey: "playerWalk") == nil {
-            // if legs are not moving, start them
-            let walk = SKAction.animate(with: player.getWalkingFrames(), timePerFrame: 0.2)
-            sprite.run(SKAction.repeatForever(walk), withKey: "playerWalk")
-        }
-        
-        
-        let velocityX = speed * cos(angle)
-        let velocityY = speed * sin(angle)
-        
-        let newVelocity = CGVector(dx: velocityX, dy: velocityY)
-        sprite.physicsBody?.velocity = newVelocity
-        
-        moveToTouch = target
-    }
-    
-    fileprivate func shouldPlayerMove(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
-        return player.currentAction != "transforming"
-            && !player.shouldAttack
-            && player.shouldMove
-            && abs(distance(currentPosition, touchPosition)) > player.sprite.frame.width / 4
-    }
-    
-    fileprivate func shouldPlayerWalkStop(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
-        return player.currentAction == "walking"
-            && (!player.shouldMove
-            || abs(distance(currentPosition, touchPosition)) < player.sprite.frame.width / 4)
-    }
-    
-    fileprivate func shouldPlayerAttackStop(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
-        return player.currentAction == "attacking"
-            && (!player.shouldAttack
-            || abs(distance(currentPosition, touchPosition)) < player.sprite.frame.width / 4)
     }
     
     // ==== Enemey Actions ====
