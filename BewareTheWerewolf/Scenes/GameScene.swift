@@ -51,7 +51,7 @@ class GameScene: SKScene {
         
         playground.texture?.filteringMode = SKTextureFilteringMode.nearest
         playground.position = CGPoint(x: frame.midX, y: frame.midY)
-        playground.zPosition = -1.0
+        playground.zPosition = -2.0
         addChild(playground)
         
         moon = Moon(x: frame.midX, y: frame.height)
