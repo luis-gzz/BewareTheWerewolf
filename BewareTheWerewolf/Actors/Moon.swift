@@ -31,6 +31,7 @@ class Moon {
         } else {
             sprite.position = CGPoint(x: 2 * x + sprite.size.width - 100, y: y - 55)
         }
+        sprite.zPosition = -1.0
         startX = 2 * x + sprite.size.width;
         
         sprite.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: 28.0, height: 28.0))
