@@ -79,7 +79,6 @@ class Player {
         if (shouldAttack) {
             currentAction = "attacking"
             attack(for: sprite, to:lastTouch!, currentTime: currentTime, speed: wolfAttackSpeed)
-            
         }
         
         if (shouldPlayerStopAttacking(currentPosition: position, touchPosition: stoppingPt)) {
@@ -166,7 +165,7 @@ class Player {
     fileprivate func shouldPlayerStopAttacking(currentPosition: CGPoint, touchPosition: CGPoint) -> Bool {
         return currentAction == "attacking"
             && (!shouldAttack
-                || abs(distance(currentPosition, touchPosition)) < sprite.frame.width / 4)
+            || abs(distance(currentPosition, touchPosition)) < sprite.frame.width / 4)
     }
     
     func setStoppingPoint(angle: CGFloat) {
@@ -199,6 +198,7 @@ class Player {
                 //now scale back to norm size? or do something else
                 self.sprite.texture = self.tobiasAnimationFrames[0]
                 self.currentAction = "standing"
+                self.scenePtr?.attackTimer = 0
             }
             let sequence = SKAction.sequence( [fall , scale, revive , done] )
             sprite.run(sequence , withKey: "toTobias")
@@ -216,6 +216,7 @@ class Player {
                 //now scale back to norm size? or do something else
                 self.sprite.texture = self.wolfAnimationFrames[0]
                 self.currentAction = "standing"
+                self.scenePtr?.attackTimer = 0
             }
             let seq = SKAction.sequence( [fall , scale, revive , done] )
             sprite.run( seq , withKey: "toWolf")
